@@ -1,9 +1,9 @@
-name: Verify AWS User Exists
+name: GitHub Testing OIDC
 
 on:
   push:
     branches:
-      - main
+      - Testing
   workflow_dispatch:
 
 permissions:
@@ -15,13 +15,13 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Configure AWS Credentials using OIDC
         uses: aws-actions/configure-aws-credentials@v4
         with:
           # Replace with your IAM role ARN
-          role-to-assume: arn:aws:iam::274024183386:user/TestMan
+          role-to-assume: {{ secrets.AWS_GITHUB_ACCESS_KEY_ID }}
           aws-region: us-east-2 # Replace with your desired AWS region
 
       - name: Check if the specific AWS user exists
