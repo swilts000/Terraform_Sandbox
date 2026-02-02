@@ -1,0 +1,29 @@
+name: Verify AWS Access with OIDC
+
+on:
+  push:
+    branches:
+      - main
+
+# Configure job-level permissions for OIDC
+permissions:
+  id-token: write # Required to allow the workflow to fetch the OIDC token
+  contents: read
+
+jobs:
+  verify-aws-access:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::274024183386:user/TestMan # Replace with your IAM Role ARN
+          aws-region: us-east-2 # Replace with your desired AWS region
+
+      - name: Verify AWS Identity
+        run: |
+          # This command will output the assumed role's ARN, confirming successful authentication
+          aws sts get-caller-identity
