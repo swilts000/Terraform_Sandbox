@@ -1,30 +1,50 @@
-name: Verify AWS Access with OIDC
+name: Verify AWS User Exists
 
 on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
-# Configure job-level permissions for OIDC
 permissions:
-  id-token: write # Required to allow the workflow to fetch the OIDC token
+  id-token: write # Required for OIDC authentication
   contents: read
 
 jobs:
-  verify-aws-access:
+  verify_user:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Configure AWS Credentials
+      - name: Configure AWS Credentials using OIDC
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          role-to-assume: arn:aws:iam::274024183386:user/TestMan 
-          # Replace with your IAM Role ARN
+          # Replace with your IAM role ARN
+          role-to-assume: arn:aws:iam::274024183386:user/TestMan
           aws-region: us-east-2 # Replace with your desired AWS region
 
-      - name: Verify AWS Identity
+      - name: Check if the specific AWS user exists
+        id: check_user
+        # The '|| true' ensures the workflow step doesn't fail on error, 
+        # allowing us to check the outcome in subsequent steps
         run: |
-          # This command will output the assumed role's ARN, confirming successful authentication
-          aws sts get-caller-identity
+          if aws iam get-user --user-name actual-username >/dev/null 2>&1; then
+            echo "user_exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "user_exists=false" >> $GITHUB_OUTPUT
+          fi
+        # We need bash to correctly set step outputs based on command success/failure
+        shell: bash
+
+      - name: Proceed if user exists (example)
+        if: steps.check_user.outputs.user_exists == 'true'
+        run: |
+          echo "User 'target-user' exists. Proceeding with user-related actions..."
+          # Add your next steps here (e.g., add user to a group, etc.)
+
+      - name: Handle case where user does not exist (example)
+        if: steps.check_user.outputs.user_exists == 'false'
+        run: |
+          echo "User 'target-user' does not exist. Halting or creating the user..."
+          # Add alternative steps here (e.g., create user, send notification)
