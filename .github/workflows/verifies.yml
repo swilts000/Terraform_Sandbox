@@ -18,12 +18,11 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Configure AWS Credentials
-        uses: aws-actions/checkout@v4
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           role-to-assume: arn:aws:iam::274024183386:user/TestMan 
           # Replace with your IAM Role ARN
-          aws-region: us-east-2 
-          # Replace with your desired AWS region
+          aws-region: us-east-2 # Replace with your desired AWS region
 
       - name: Verify AWS Identity
         run: |
