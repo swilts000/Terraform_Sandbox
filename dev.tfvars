@@ -1,0 +1,1 @@
+aws_ecr_repository_name = "ecr_demo"
