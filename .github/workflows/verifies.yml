@@ -21,7 +21,7 @@ jobs:
         uses: aws-actions/configure-aws-credentials@v4
         with:
           # Replace with your IAM role ARN
-          role-to-assume: {{ secrets.AWS_GITHUB_ACCESS_KEY_ID }}
+          role-to-assume: ${{ secrets.AWS_GITHUB_ACCESS_KEY_ID }}
           aws-region: us-east-2 # Replace with your desired AWS region
 
       - name: Check if the specific AWS user exists
