@@ -1,4 +1,4 @@
-name: Terraform Create ECR
+name: Terraform Create ECR and Verify Identity
 on:
   workflow_dispatch:
     inputs:
