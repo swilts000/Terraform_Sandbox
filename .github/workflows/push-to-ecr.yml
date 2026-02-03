@@ -6,6 +6,10 @@ on:
         description: "ECR repository name"
         required: true
         type: string
+        default: "my-ecr-default-repo"
+  push:
+    branches:
+      - more_testing
 
 jobs:
   terraform:
