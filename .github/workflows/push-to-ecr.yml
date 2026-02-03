@@ -10,7 +10,6 @@ on:
 jobs:
   terraform:
     runs-on: ubuntu-latest
-    # Set default working directory so subsequent 'run' steps execute from infra/
     defaults:
       run:
         working-directory: .
@@ -18,21 +17,16 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        # Checkout the repository so Terraform config under infra/ is available
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: 1.9.0
-        # Ensure a specific Terraform version is installed on the runner.
 
       - name: Verify GitHub CLI Identity
         run: |
             echo "Running as: ${{ github.actor }}"
             gh auth status
-        # The GitHub CLI (gh) reads auth token from GH_TOKEN in Actions environments.
-        # Use the built-in GITHUB_TOKEN (provided by GitHub Actions) so this step
-        # does not require a custom secret named 'TOKEN'.
         env:
             GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -41,19 +35,13 @@ jobs:
         with:
           aws-access-key-id: ${{ secrets.ACCESS_KEY_FOR_GITHUB }}
           aws-secret-access-key: ${{ secrets.SECRET_ACCESS_KEY_FOR_GITHUB }}
-          # Use a single source of truth for AWS region via secrets.AWS_REGION.
-          # This keeps the region consistent between credential config and Terraform vars.
           aws-region: ${{ secrets.AWS_REGION }}
 
       - name: Terraform Init
         run: terraform init
-        # Run 'terraform init' from infra/ (see defaults.working-directory) to initialize providers and backend.
 
       - name: Terraform Apply
         run: |
-          # Apply Terraform using the same AWS region that was used to configure credentials.
-          # Pass the repository name from the workflow_dispatch input.
           terraform apply -auto-approve \
             -var="aws_region=${{ secrets.AWS_REGION }}" \
             -var="ecr_repo_name=${{ github.event.inputs.ecr_repo }}"
-        # Running with -auto-approve for non-interactive CI. Remove if you want manual approval.

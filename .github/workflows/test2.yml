@@ -1,12 +1,11 @@
 name: Verify Account Info (No OIDC)
 
-on: [workflow_dispatch] # Allows manual triggering
+on: [workflow_dispatch]
 
 jobs:
   verify-accounts:
     runs-on: ubuntu-latest
     steps:
-      # 1. Verify GitHub Actor & CLI Identity
       - name: Verify GitHub CLI Identity
         run: |
           echo "Running as: ${{ github.actor }}"
@@ -14,7 +13,6 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.TOKEN }}
 
-      # 2. Verify AWS Account Info
       - name: Verify AWS Account
         uses: aws-actions/configure-aws-credentials@v4
         with:
