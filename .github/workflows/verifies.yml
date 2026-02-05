@@ -20,7 +20,26 @@ jobs:
         with:
           aws-region: "us-east-2"
           role-to-assume: ${{ secrets.AWS_OIDC_ACCESS }}
-      - name: Verify AWS Identity
-        run: aws sts get-caller-identity
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.0
 
+      - name: Verify GitHub CLI Identity
+        run: |
+            echo "Running as: ${{ github.actor }}"
+            gh auth status
+        env:
+            GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Create dev.tfvars from input
+        run: |
+          echo "aws_ecr_repository_name = \"${{ github.event.inputs.ecr_repo }}\"" > dev.tfvars
+
+      - name: Terraform Apply
+        run: |
+          terraform apply -auto-approve -var-file=dev.tfvars
       
