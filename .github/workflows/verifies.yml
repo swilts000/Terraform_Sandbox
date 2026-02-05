@@ -1,4 +1,4 @@
-name: GitHub Testing OIDC AGAIN
+name: GitHub Testing OIDC Again
 
 on:
   push:
