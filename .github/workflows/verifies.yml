@@ -1,8 +1,8 @@
-name: GitHub Testing OIDC AGAIN
+name: GitHub Testing OIDC ECR AGAIN
 
 on:
   push:
-    branches: [Testing]
+    branches: [OIDC_ECR]
 
 permissions:
   id-token: write
