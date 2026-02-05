@@ -1,50 +1,26 @@
-name: GitHub Testing OIDC
+name: GitHub Testing OIDC AGAIN
 
 on:
   push:
-    branches:
-      - Testing
-  workflow_dispatch:
+    branches: [Testing]
 
 permissions:
-  id-token: write # Required for OIDC authentication
-  contents: read
-
+  id-token: write
+  contents: read    
+      
+  
 jobs:
   verify_user:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
-
-      - name: Configure AWS Credentials using OIDC
-        uses: aws-actions/configure-aws-credentials@v4
+      - name: Verify OIDC
+        uses: aws-actions/configure-aws-credentials@v4.1.0
         with:
-          # Replace with your IAM role ARN
-          role-to-assume: ${{ secrets.AWS_GITHUB_ACCESS_KEY_ID }}
-          aws-region: us-east-2 # Replace with your desired AWS region
+          aws-region: "us-east-2"
+          role-to-assume: ${{ secrets.AWS_OIDC_ACCESS }}
+      - name: Verify AWS Identity
+        run: aws sts get-caller-identity
 
-      - name: Check if the specific AWS user exists
-        id: check_user
-        # The '|| true' ensures the workflow step doesn't fail on error, 
-        # allowing us to check the outcome in subsequent steps
-        run: |
-          if aws iam get-user --user-name actual-username >/dev/null 2>&1; then
-            echo "user_exists=true" >> $GITHUB_OUTPUT
-          else
-            echo "user_exists=false" >> $GITHUB_OUTPUT
-          fi
-        # We need bash to correctly set step outputs based on command success/failure
-        shell: bash
-
-      - name: Proceed if user exists (example)
-        if: steps.check_user.outputs.user_exists == 'true'
-        run: |
-          echo "User 'target-user' exists. Proceeding with user-related actions..."
-          # Add your next steps here (e.g., add user to a group, etc.)
-
-      - name: Handle case where user does not exist (example)
-        if: steps.check_user.outputs.user_exists == 'false'
-        run: |
-          echo "User 'target-user' does not exist. Halting or creating the user..."
-          # Add alternative steps here (e.g., create user, send notification)
+      
