@@ -1,6 +1,14 @@
 name: GitHub Testing OIDC ECR AGAIN
 
 on:
+  workflow_dispatch:
+    inputs:
+      ecr_repo:
+        description: "ECR repository name"
+        required: true
+        type: string
+        default: "my-ecr-default-repo"
+        
   push:
     branches: [OIDC_ECR]
 
