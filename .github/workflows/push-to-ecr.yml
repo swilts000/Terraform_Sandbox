@@ -1,4 +1,4 @@
-name: Terraform Create ECR and Verify Identity
+name: 3rd Try - Push to ECR using OIDC
 on:
   workflow_dispatch:
     inputs:
