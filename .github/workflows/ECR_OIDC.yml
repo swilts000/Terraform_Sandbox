@@ -10,7 +10,8 @@ on:
         default: "my-ecr-default-repo"
         
   push:
-    branches: [OIDC_ECR]
+    branches: 
+      -OIDC_ECR
 
 permissions:
   id-token: write
@@ -23,6 +24,11 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.0
 
       - name: Verify GitHub CLI Identity
         run: |
