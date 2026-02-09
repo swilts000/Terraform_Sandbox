@@ -7,6 +7,13 @@ on:
         required: true
         type: string
 
+  push:
+    branches: [3rd try]
+
+permissions:
+  id-token: write
+  contents: read   
+    
 jobs:
   verify_user:
     runs-on: ubuntu-latest
