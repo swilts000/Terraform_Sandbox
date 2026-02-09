@@ -1,4 +1,4 @@
-name: 3rd Try - Push to ECR using OIDC
+name: 3rd Try - GitHub OIDC to ECR with Terraform by @Sharif
 on:
   workflow_dispatch:
     inputs:
