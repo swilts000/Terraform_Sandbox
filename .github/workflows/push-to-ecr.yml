@@ -8,7 +8,7 @@ on:
         type: string
 
   push:
-    branches: [3rd try]
+    branches: [Testing]
 
 permissions:
   id-token: write
