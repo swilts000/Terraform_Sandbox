@@ -6,6 +6,10 @@ on:
         description: "ECR repository name"
         required: true
         type: string
+      github_repo:
+        description: "GitHub repository name (e.g., owner/repo)"
+        required: true
+        type: string
 
   push:
     branches: [Testing]
@@ -45,6 +49,7 @@ jobs:
       - name: Create dev.tfvars from input
         run: |
           echo "aws_ecr_repository_name = \"${{ github.event.inputs.ecr_repo || 'my-ecr-default-repo' }}\"" > dev.tfvars
+          echo "github_repository_name = \"${{ github.event.inputs.github_repo }}\"" >> dev.tfvars
 
       - name: Terraform Validate
         run: terraform validate
