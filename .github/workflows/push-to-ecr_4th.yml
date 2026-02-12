@@ -2,7 +2,7 @@ name: 4th ECR Push Workflow
 on:
   push:
     branches:
-      - Testing
+      - 4th_try_ODIC # Trigger on push to the specific branch
   workflow_dispatch:
     inputs:
       ecr_repo:
