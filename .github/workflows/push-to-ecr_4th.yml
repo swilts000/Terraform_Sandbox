@@ -1,4 +1,4 @@
-name: 3rd Try - GitHub OIDC to ECR with Terraform by @Sharif
+name: 4th ECR Push Workflow
 on:
   push:
     branches:
