@@ -1,11 +1,27 @@
-name: 3rd Try - Push to ECR using OIDC
+name: 3rd Try - GitHub OIDC to ECR with Terraform by @Sharif
 on:
+  push:
+    branches:
+      - Testing
   workflow_dispatch:
     inputs:
       ecr_repo:
         description: "ECR repository name"
         required: true
         type: string
+      github_repo:
+        description: "GitHub repository name (e.g., owner/repo)"
+        required: true
+        type: string
+      confirm_apply:
+        description: "Type 'yes' to run terraform apply"
+        required: false
+        default: "no"
+        type: string
+
+permissions:
+  id-token: write
+  contents: read
 
 jobs:
   verify_user:
@@ -38,6 +54,7 @@ jobs:
       - name: Create dev.tfvars from input
         run: |
           echo "aws_ecr_repository_name = \"${{ github.event.inputs.ecr_repo || 'my-ecr-default-repo' }}\"" > dev.tfvars
+          echo "github_repository_name = \"${{ github.event.inputs.github_repo }}\"" >> dev.tfvars
 
       - name: Terraform Validate
         run: terraform validate
@@ -46,5 +63,5 @@ jobs:
         run: terraform plan -var-file=dev.tfvars
 
       - name: Terraform Apply
-        if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/OIDC_ECR'
+        if: ${{ github.event.inputs.confirm_apply == 'yes' && (github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/OIDC_ECR') }}
         run: terraform apply -auto-approve -var-file=dev.tfvars
