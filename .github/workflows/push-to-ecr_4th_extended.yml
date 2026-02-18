@@ -71,11 +71,7 @@ jobs:
         run: terraform plan -var-file=dev.tfvars
 
   terraform_apply:
-<<<<<<< HEAD
-    needs: terraform_init_plan
-=======
     needs: terraform_staging
->>>>>>> ed009be46e3c8e1ece2bb72f2d4504ed6efd4697
     runs-on: ubuntu-latest
     if: ${{ github.event.inputs.confirm_apply == 'yes' && (github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/OIDC_ECR') }}
     steps:
