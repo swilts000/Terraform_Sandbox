@@ -38,36 +38,7 @@ jobs:
           echo "Running as: ${{ github.actor }}"
           gh auth status
 
-  terraform_plan:
-    needs: terraform_init
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Configure AWS credentials (OIDC)
-        uses: aws-actions/configure-aws-credentials@v4.1.0
-        with:
-          aws-region: us-east-2
-          role-to-assume: ${{ secrets.AWS_OIDC_ACCESS }}
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: 1.9.0
-
-      - name: Create dev.tfvars from input
-        run: |
-          echo "aws_ecr_repository_name = \"${{ github.event.inputs.ecr_repo || 'my-ecr-default-repo' }}\"" > dev.tfvars
-          echo "github_repository_name = \"${{ github.event.inputs.github_repo }}\"" >> dev.tfvars
-
-      - name: Terraform Validate
-        run: terraform validate
-
-      - name: Terraform Plan
-        run: terraform plan -var-file=dev.tfvars
-        
-  terraform_init:
+  terraform_staging:
     needs: verify_user
     runs-on: ubuntu-latest
     steps:
@@ -88,9 +59,19 @@ jobs:
       - name: Terraform Init
         run: terraform init
 
+      - name: Create dev.tfvars from input
+        run: |
+          echo "aws_ecr_repository_name = \"${{ github.event.inputs.ecr_repo || 'my-ecr-default-repo' }}\"" > dev.tfvars
+          echo "github_repository_name = \"${{ github.event.inputs.github_repo }}\"" >> dev.tfvars
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Plan
+        run: terraform plan -var-file=dev.tfvars
 
   terraform_apply:
-    needs: terraform_plan
+    needs: terraform_staging
     runs-on: ubuntu-latest
     if: ${{ github.event.inputs.confirm_apply == 'yes' && (github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/OIDC_ECR') }}
     steps:
