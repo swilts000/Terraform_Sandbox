@@ -38,27 +38,6 @@ jobs:
           echo "Running as: ${{ github.actor }}"
           gh auth status
 
-  terraform_init:
-    needs: verify_user
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Configure AWS credentials (OIDC)
-        uses: aws-actions/configure-aws-credentials@v4.1.0
-        with:
-          aws-region: us-east-2
-          role-to-assume: ${{ secrets.AWS_OIDC_ACCESS }}
-
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
-        with:
-          terraform_version: 1.9.0
-
-      - name: Terraform Init
-        run: terraform init
-
   terraform_plan:
     needs: terraform_init
     runs-on: ubuntu-latest
@@ -87,6 +66,28 @@ jobs:
 
       - name: Terraform Plan
         run: terraform plan -var-file=dev.tfvars
+        
+  terraform_init:
+    needs: verify_user
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4.1.0
+        with:
+          aws-region: us-east-2
+          role-to-assume: ${{ secrets.AWS_OIDC_ACCESS }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.0
+
+      - name: Terraform Init
+        run: terraform init
+
 
   terraform_apply:
     needs: terraform_plan
