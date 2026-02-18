@@ -1,0 +1,111 @@
+name: 4th ECR Push Workflow
+on:
+  push:
+    branches:
+      - 4th_try_ODIC # Trigger on push to the specific branch
+  workflow_dispatch:
+    inputs:
+      ecr_repo:
+        description: "ECR repository name"
+        required: true
+        type: string
+      github_repo:
+        description: "GitHub repository name (e.g., owner/repo)"
+        required: true
+        type: string
+      confirm_apply:
+        description: "Type 'yes' to run terraform apply"
+        required: false
+        default: "no"
+        type: string
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  verify_user:
+    runs-on: ubuntu-latest
+    outputs: {}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Verify GitHub CLI Identity
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "Running as: ${{ github.actor }}"
+          gh auth status
+
+  terraform_init:
+    needs: verify_user
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4.1.0
+        with:
+          aws-region: us-east-2
+          role-to-assume: ${{ secrets.AWS_OIDC_ACCESS }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.0
+
+      - name: Terraform Init
+        run: terraform init
+
+  terraform_plan:
+    needs: terraform_init
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4.1.0
+        with:
+          aws-region: us-east-2
+          role-to-assume: ${{ secrets.AWS_OIDC_ACCESS }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.0
+
+      - name: Create dev.tfvars from input
+        run: |
+          echo "aws_ecr_repository_name = \"${{ github.event.inputs.ecr_repo || 'my-ecr-default-repo' }}\"" > dev.tfvars
+          echo "github_repository_name = \"${{ github.event.inputs.github_repo }}\"" >> dev.tfvars
+
+      - name: Terraform Validate
+        run: terraform validate
+
+      - name: Terraform Plan
+        run: terraform plan -var-file=dev.tfvars
+
+  terraform_apply:
+    needs: terraform_plan
+    runs-on: ubuntu-latest
+    if: ${{ github.event.inputs.confirm_apply == 'yes' && (github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/OIDC_ECR') }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4.1.0
+        with:
+          aws-region: us-east-2
+          role-to-assume: ${{ secrets.AWS_OIDC_ACCESS }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.0
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve -var-file=dev.tfvars
