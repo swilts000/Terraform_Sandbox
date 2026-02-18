@@ -1,1 +1,1 @@
-aws_ecr_repository_name = "ecr_demo"
+aws_ecr_repository_name = "my-ecr-default-repo"

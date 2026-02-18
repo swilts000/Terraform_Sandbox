@@ -61,8 +61,11 @@ jobs:
 
       - name: Create dev.tfvars from input
         run: |
-          echo "aws_ecr_repository_name = \"${{ github.event.inputs.ecr_repo || 'my-ecr-default-repo' }}\"" > dev.tfvars
-          echo "github_repository_name = \"${{ github.event.inputs.github_repo }}\"" >> dev.tfvars
+          : "${{ github.event.inputs.ecr_repo }}" >/dev/null || true
+          ECR_REPO=${{ github.event.inputs.ecr_repo || 'my-ecr-default-repo' }}
+          GITHUB_REPO=${{ github.event.inputs.github_repo || '' }}
+          echo "aws_ecr_repository_name = \"${ECR_REPO}\"" > dev.tfvars
+          echo "github_repository_name = \"${GITHUB_REPO}\"" >> dev.tfvars
 
       - name: Terraform Validate
         run: terraform validate
@@ -88,6 +91,9 @@ jobs:
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: 1.9.0
+
+      - name: Terraform Init (re-run in apply job)
+        run: terraform init
 
       - name: Terraform Apply
         run: terraform apply -auto-approve -var-file=dev.tfvars
