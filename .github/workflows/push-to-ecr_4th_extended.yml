@@ -1,99 +1,122 @@
+# 4th ECR Push Workflow
+# This workflow automates Terraform operations for AWS ECR using OIDC authentication.
+# It allows user input for ECR repo, GitHub repo, and confirmation for apply.
+# Triggers on push to '4th_try_ODIC' branch or manually via workflow_dispatch.
+
 name: 4th ECR Push Workflow
+
 on:
   push:
     branches:
-      - 4th_try_ODIC # Trigger on push to the specific branch
+      - 4th_try_ODIC # Trigger workflow on push to the '4th_try_ODIC' branch
   workflow_dispatch:
     inputs:
       ecr_repo:
-        description: "ECR repository name"
+        description: "ECR repository name" # User input for AWS ECR repository name
         required: true
         type: string
       github_repo:
-        description: "GitHub repository name (e.g., owner/repo)"
+        description: "GitHub repository name (e.g., owner/repo)" # User input for GitHub repository name
         required: true
         type: string
       confirm_apply:
-        description: "Type 'yes' to run terraform apply"
+        description: "Type 'yes' to run terraform apply" # User input to confirm running 'terraform apply'
         required: false
         default: "no"
         type: string
 
 permissions:
-  id-token: write
-  contents: read
+  id-token: write   # Required for OIDC authentication to AWS
+  contents: read    # Allows reading repository contents
 
 jobs:
   verify_user:
     runs-on: ubuntu-latest
     outputs: {}
     steps:
+      # Step 1: Checkout the repository code
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # Step 2: Verify GitHub CLI identity for audit/logging
       - name: Verify GitHub CLI Identity
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          echo "Running as: ${{ github.actor }}"
-          gh auth status
+          echo "Running as: ${{ github.actor }}" # Print the GitHub actor triggering the workflow
+          gh auth status                       # Show authentication status for GitHub CLI
 
   terraform_staging:
-    needs: verify_user
+    needs: verify_user # Depends on verify_user job completion
     runs-on: ubuntu-latest
     steps:
+      # Step 1: Checkout the repository code
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # Step 2: Configure AWS credentials using OIDC for secure access
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4.1.0
         with:
           aws-region: us-east-2
           role-to-assume: ${{ secrets.AWS_OIDC_ACCESS }}
 
+      # Step 3: Setup Terraform CLI
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: 1.9.0
 
+      # Step 4: Initialize Terraform working directory
       - name: Terraform Init
         run: terraform init
 
+      # Step 5: Create dev.tfvars file from workflow inputs
       - name: Create dev.tfvars from input
         run: |
-          : "${{ github.event.inputs.ecr_repo }}" >/dev/null || true
-          ECR_REPO=${{ github.event.inputs.ecr_repo || 'my-ecr-default-repo' }}
-          GITHUB_REPO=${{ github.event.inputs.github_repo || '' }}
-          echo "aws_ecr_repository_name = \"${ECR_REPO}\"" > dev.tfvars
-          echo "github_repository_name = \"${GITHUB_REPO}\"" >> dev.tfvars
+          : "${{ github.event.inputs.ecr_repo }}" >/dev/null || true # Validate input presence
+          ECR_REPO=${{ github.event.inputs.ecr_repo || 'my-ecr-default-repo' }} # Set ECR repo variable
+          GITHUB_REPO=${{ github.event.inputs.github_repo || '' }}              # Set GitHub repo variable
+          echo "aws_ecr_repository_name = \"${ECR_REPO}\"" > dev.tfvars        # Write ECR repo to tfvars
+          echo "github_repository_name = \"${GITHUB_REPO}\"" >> dev.tfvars     # Write GitHub repo to tfvars
 
+      # Step 6: Validate Terraform configuration
       - name: Terraform Validate
         run: terraform validate
 
+      # Step 7: Run Terraform plan using dev.tfvars
       - name: Terraform Plan
         run: terraform plan -var-file=dev.tfvars
 
   terraform_apply:
-    needs: terraform_staging
+    needs: terraform_staging # Depends on terraform_staging job completion
     runs-on: ubuntu-latest
+    # Only run if user confirms apply and workflow is triggered manually or from OIDC_ECR branch
     if: ${{ github.event.inputs.confirm_apply == 'yes' && (github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/OIDC_ECR') }}
     steps:
+      # Step 1: Checkout the repository code
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # Step 2: Configure AWS credentials using OIDC for secure access
       - name: Configure AWS credentials (OIDC)
         uses: aws-actions/configure-aws-credentials@v4.1.0
         with:
           aws-region: us-east-2
           role-to-assume: ${{ secrets.AWS_OIDC_ACCESS }}
 
+      # Step 3: Setup Terraform CLI
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: 1.9.0
 
+      # Step 4: Re-initialize Terraform working directory for apply
       - name: Terraform Init (re-run in apply job)
         run: terraform init
 
+      # Step 5: Run Terraform apply with auto-approve and dev.tfvars
       - name: Terraform Apply
         run: terraform apply -auto-approve -var-file=dev.tfvars
+
+# End of workflow
